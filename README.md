@@ -75,6 +75,9 @@ The backend uses Java 21, Spring Boot 3, and Maven. It runs at
 | `GET /api/v1/projects/{id}` | Authenticated | Gets an accessible project |
 | `PUT /api/v1/projects/{id}` | `USER`, `ADMIN` | Updates an accessible project |
 | `DELETE /api/v1/projects/{id}` | `USER`, `ADMIN` | Deletes an accessible project |
+| `POST /api/v1/projects/{id}/documents` | `USER`, `ADMIN` | Uploads a document |
+| `GET /api/v1/projects/{id}/documents` | Authenticated | Lists accessible document metadata |
+| `GET /api/v1/projects/{id}/documents/{documentId}` | `USER`, `ADMIN` | Downloads accessible file content |
 | `GET /api/v1/audit-logs` | `ADMIN`, `AUDITOR` | Lists audit events newest first |
 
 To run the backend outside Docker, start Keycloak first and then run:
@@ -177,3 +180,56 @@ curl -H "Authorization: Bearer $ACCESS_TOKEN" \
 ```
 
 Users receive `403 Forbidden` from the audit log endpoint.
+
+## Documents
+
+Documents are stored under `DOCUMENT_STORAGE_PATH`, which defaults to
+`./data/uploads` for local development. Docker Compose mounts the repository's
+`./data/uploads` directory into the backend container. Uploaded file bytes are
+not stored in PostgreSQL; the database contains document metadata only.
+
+Uploads are limited to 5 MB and must use one of these extensions:
+
+- `.pdf`
+- `.txt`
+- `.png`
+- `.jpg`
+- `.jpeg`
+
+Executable and archive types such as `.exe`, `.js`, `.bat`, `.sh`, `.jar`, and
+`.zip` are rejected. Stored filenames are randomized, normalized paths are
+checked against the storage root, and original filenames are used only as
+validated display/download metadata.
+
+Upload a document:
+
+```shell
+curl -X POST \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -F "file=@./example.pdf" \
+  http://localhost:8080/api/v1/projects/<project-id>/documents
+```
+
+List document metadata:
+
+```shell
+curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+  http://localhost:8080/api/v1/projects/<project-id>/documents
+```
+
+Download a document:
+
+```shell
+curl -L \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -o downloaded-file \
+  http://localhost:8080/api/v1/projects/<project-id>/documents/<document-id>
+```
+
+Project owners and administrators can upload, list, and download documents.
+Auditors can list document metadata for any project but cannot upload or
+download file content.
+
+Document operations write `DOCUMENT_UPLOADED`, `DOCUMENT_DOWNLOADED`,
+`DOCUMENT_UPLOAD_REJECTED`, and applicable `ACCESS_DENIED` audit events. File
+content and authentication secrets are never written to audit logs.

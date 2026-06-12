@@ -1,6 +1,10 @@
 spring:
   application:
     name: securetask-backend
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/keycloak?currentSchema=securetask}
     username: ${DATABASE_USERNAME:securetask}
@@ -27,3 +31,8 @@ management:
     web:
       exposure:
         include: health
+
+securetask:
+  documents:
+    storage-path: ${DOCUMENT_STORAGE_PATH:./data/uploads}
+    max-size-bytes: 5242880

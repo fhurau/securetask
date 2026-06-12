@@ -25,12 +25,23 @@ public class AuditLogService {
             UUID resourceId,
             String result,
             AuditRequestContext context) {
+        record(authentication, action, "PROJECT", resourceId, result, context);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void record(
+            JwtAuthenticationToken authentication,
+            String action,
+            String resourceType,
+            UUID resourceId,
+            String result,
+            AuditRequestContext context) {
         Jwt jwt = authentication.getToken();
         AuditLog auditLog = new AuditLog(
                 jwt.getSubject(),
                 jwt.getClaimAsString("email"),
                 action,
-                "PROJECT",
+                resourceType,
                 resourceId,
                 result,
                 context.ipAddress(),
