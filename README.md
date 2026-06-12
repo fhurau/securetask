@@ -44,6 +44,25 @@ The `securetask` realm, its roles, the `securetask-frontend` client, and demo
 users are imported automatically when Keycloak starts. Keycloak does not
 overwrite an existing realm with the same name.
 
+## Security CI
+
+GitHub Actions runs the workflow in
+`.github/workflows/security-ci.yml` for pushes to `main`, pull requests, and
+manual runs. It uses only free, public tooling and read-only repository
+permissions:
+
+- Maven runs the backend test suite on Java 21.
+- npm installs the locked frontend dependencies, then runs lint and the
+  production build on Node.js 24.
+- Gitleaks scans the complete Git history for committed secrets and redacts
+  detected values from its output.
+- Trivy scans the repository filesystem for high and critical dependency
+  vulnerabilities with available fixes.
+
+Any failed test, build, secret finding, or qualifying Trivy finding fails its
+job. The workflow does not deploy the application and does not require paid
+services or application secrets.
+
 ## Frontend
 
 The frontend runs at `http://localhost:3000`. It uses the public
