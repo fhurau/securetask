@@ -35,7 +35,7 @@ class ProjectControllerSecurityTest {
     @Test
     void userGetsForbiddenForAnotherUsersProject() throws Exception {
         UUID projectId = UUID.randomUUID();
-        when(projectService.findById(eq(projectId), any()))
+        when(projectService.findById(eq(projectId), any(), any()))
                 .thenThrow(new AccessDeniedException("You cannot access this project"));
 
         mockMvc.perform(get("/api/v1/projects/{id}", projectId)

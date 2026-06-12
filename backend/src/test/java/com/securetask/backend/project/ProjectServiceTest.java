@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.securetask.backend.audit.AuditLogService;
+import com.securetask.backend.audit.AuditRequestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -29,6 +31,12 @@ class ProjectServiceTest {
     @Mock
     private ProjectRepository projectRepository;
 
+    @Mock
+    private AuditLogService auditLogService;
+
+    private final AuditRequestContext auditContext =
+            new AuditRequestContext("127.0.0.1", "test-agent", "test-correlation-id");
+
     @Test
     void userCanCreateOwnProject() {
         when(projectRepository.save(any(Project.class))).thenAnswer(invocation -> {
@@ -36,17 +44,26 @@ class ProjectServiceTest {
             project.onCreate();
             return project;
         });
-        ProjectService service = new ProjectService(projectRepository);
+        ProjectService service = new ProjectService(projectRepository, auditLogService);
+        JwtAuthenticationToken authentication =
+                authentication("user-1", "user1@example.com", "ROLE_USER");
 
         ProjectResponse response = service.create(
                 new ProjectRequest("My project", "Description"),
-                authentication("user-1", "user1@example.com", "ROLE_USER"));
+                authentication,
+                auditContext);
 
         ArgumentCaptor<Project> captor = ArgumentCaptor.forClass(Project.class);
         verify(projectRepository).save(captor.capture());
         assertThat(captor.getValue().getOwnerUserId()).isEqualTo("user-1");
         assertThat(captor.getValue().getOwnerEmail()).isEqualTo("user1@example.com");
         assertThat(response.name()).isEqualTo("My project");
+        verify(auditLogService).record(
+                authentication,
+                "PROJECT_CREATED",
+                response.id(),
+                "SUCCESS",
+                auditContext);
     }
 
     @Test
@@ -54,7 +71,7 @@ class ProjectServiceTest {
         Project ownProject = project("Own project", "user-1", "user1@example.com");
         when(projectRepository.findAllByOwnerUserIdOrderByCreatedAtDesc("user-1"))
                 .thenReturn(List.of(ownProject));
-        ProjectService service = new ProjectService(projectRepository);
+        ProjectService service = new ProjectService(projectRepository, auditLogService);
 
         List<ProjectResponse> response = service.findAll(
                 authentication("user-1", "user1@example.com", "ROLE_USER"));
@@ -71,12 +88,21 @@ class ProjectServiceTest {
                 "user2@example.com");
         when(projectRepository.findById(otherProject.getId()))
                 .thenReturn(Optional.of(otherProject));
-        ProjectService service = new ProjectService(projectRepository);
+        ProjectService service = new ProjectService(projectRepository, auditLogService);
+        JwtAuthenticationToken authentication =
+                authentication("user-1", "user1@example.com", "ROLE_USER");
 
         assertThatThrownBy(() -> service.findById(
                 otherProject.getId(),
-                authentication("user-1", "user1@example.com", "ROLE_USER")))
+                authentication,
+                auditContext))
                 .isInstanceOf(AccessDeniedException.class);
+        verify(auditLogService).record(
+                authentication,
+                "ACCESS_DENIED",
+                otherProject.getId(),
+                "DENIED",
+                auditContext);
     }
 
     @Test
@@ -84,7 +110,7 @@ class ProjectServiceTest {
         Project first = project("First", "user-1", "user1@example.com");
         Project second = project("Second", "user-2", "user2@example.com");
         when(projectRepository.findAll(any(Sort.class))).thenReturn(List.of(first, second));
-        ProjectService service = new ProjectService(projectRepository);
+        ProjectService service = new ProjectService(projectRepository, auditLogService);
 
         List<ProjectResponse> response = service.findAll(
                 authentication("admin-1", "admin@example.com", "ROLE_ADMIN"));

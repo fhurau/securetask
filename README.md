@@ -75,6 +75,7 @@ The backend uses Java 21, Spring Boot 3, and Maven. It runs at
 | `GET /api/v1/projects/{id}` | Authenticated | Gets an accessible project |
 | `PUT /api/v1/projects/{id}` | `USER`, `ADMIN` | Updates an accessible project |
 | `DELETE /api/v1/projects/{id}` | `USER`, `ADMIN` | Deletes an accessible project |
+| `GET /api/v1/audit-logs` | `ADMIN`, `AUDITOR` | Lists audit events newest first |
 
 To run the backend outside Docker, start Keycloak first and then run:
 
@@ -148,3 +149,31 @@ curl -X DELETE \
 
 Project names are required and limited to 100 characters. Descriptions are
 optional and limited to 1000 characters.
+
+## Audit Logs
+
+The backend writes audit records for:
+
+- `PROJECT_CREATED`
+- `PROJECT_UPDATED`
+- `PROJECT_DELETED`
+- `PROJECT_VIEWED`
+- `ACCESS_DENIED`
+
+Each record contains the actor ID and email, action, resource identifier,
+result, timestamp, remote IP address, user agent, and correlation ID. Clients
+may send an `X-Correlation-ID` header containing up to 100 letters, numbers,
+dots, underscores, or hyphens. The backend generates one when the header is
+missing or invalid and returns it in the response.
+
+Audit logging never stores passwords, access tokens, refresh tokens, secret
+keys, or full request bodies.
+
+Administrators and auditors can list audit records:
+
+```shell
+curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+  http://localhost:8080/api/v1/audit-logs
+```
+
+Users receive `403 Forbidden` from the audit log endpoint.

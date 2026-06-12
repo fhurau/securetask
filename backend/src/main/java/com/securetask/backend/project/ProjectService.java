@@ -3,6 +3,8 @@ package com.securetask.backend.project;
 import java.util.List;
 import java.util.UUID;
 
+import com.securetask.backend.audit.AuditLogService;
+import com.securetask.backend.audit.AuditRequestContext;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -17,20 +19,34 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final AuditLogService auditLogService;
 
-    ProjectService(ProjectRepository projectRepository) {
+    ProjectService(
+            ProjectRepository projectRepository,
+            AuditLogService auditLogService) {
         this.projectRepository = projectRepository;
+        this.auditLogService = auditLogService;
     }
 
     @Transactional
-    ProjectResponse create(ProjectRequest request, JwtAuthenticationToken authentication) {
+    ProjectResponse create(
+            ProjectRequest request,
+            JwtAuthenticationToken authentication,
+            AuditRequestContext auditContext) {
         Jwt jwt = authentication.getToken();
         Project project = new Project(
                 request.name(),
                 request.description(),
                 jwt.getSubject(),
                 jwt.getClaimAsString("email"));
-        return toResponse(projectRepository.save(project));
+        Project savedProject = projectRepository.save(project);
+        auditLogService.record(
+                authentication,
+                "PROJECT_CREATED",
+                savedProject.getId(),
+                "SUCCESS",
+                auditContext);
+        return toResponse(savedProject);
     }
 
     @Transactional(readOnly = true)
@@ -44,9 +60,18 @@ class ProjectService {
     }
 
     @Transactional(readOnly = true)
-    ProjectResponse findById(UUID id, JwtAuthenticationToken authentication) {
+    ProjectResponse findById(
+            UUID id,
+            JwtAuthenticationToken authentication,
+            AuditRequestContext auditContext) {
         Project project = getProject(id);
-        requireOwnerOrAdmin(project, authentication);
+        requireOwnerOrAdmin(project, authentication, auditContext);
+        auditLogService.record(
+                authentication,
+                "PROJECT_VIEWED",
+                project.getId(),
+                "SUCCESS",
+                auditContext);
         return toResponse(project);
     }
 
@@ -54,18 +79,34 @@ class ProjectService {
     ProjectResponse update(
             UUID id,
             ProjectRequest request,
-            JwtAuthenticationToken authentication) {
+            JwtAuthenticationToken authentication,
+            AuditRequestContext auditContext) {
         Project project = getProject(id);
-        requireOwnerOrAdmin(project, authentication);
+        requireOwnerOrAdmin(project, authentication, auditContext);
         project.update(request.name(), request.description());
+        auditLogService.record(
+                authentication,
+                "PROJECT_UPDATED",
+                project.getId(),
+                "SUCCESS",
+                auditContext);
         return toResponse(project);
     }
 
     @Transactional
-    void delete(UUID id, JwtAuthenticationToken authentication) {
+    void delete(
+            UUID id,
+            JwtAuthenticationToken authentication,
+            AuditRequestContext auditContext) {
         Project project = getProject(id);
-        requireOwnerOrAdmin(project, authentication);
+        requireOwnerOrAdmin(project, authentication, auditContext);
         projectRepository.delete(project);
+        auditLogService.record(
+                authentication,
+                "PROJECT_DELETED",
+                project.getId(),
+                "SUCCESS",
+                auditContext);
     }
 
     private Project getProject(UUID id) {
@@ -75,9 +116,16 @@ class ProjectService {
 
     private void requireOwnerOrAdmin(
             Project project,
-            JwtAuthenticationToken authentication) {
+            JwtAuthenticationToken authentication,
+            AuditRequestContext auditContext) {
         if (!isAdmin(authentication)
                 && !project.getOwnerUserId().equals(authentication.getToken().getSubject())) {
+            auditLogService.record(
+                    authentication,
+                    "ACCESS_DENIED",
+                    project.getId(),
+                    "DENIED",
+                    auditContext);
             throw new AccessDeniedException("You cannot access this project");
         }
     }

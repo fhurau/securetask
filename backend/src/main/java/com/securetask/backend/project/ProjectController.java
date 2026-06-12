@@ -4,6 +4,8 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import com.securetask.backend.audit.AuditRequestContext;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
@@ -32,8 +34,12 @@ public class ProjectController {
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     ResponseEntity<ProjectResponse> create(
             @Valid @RequestBody ProjectRequest request,
-            JwtAuthenticationToken authentication) {
-        ProjectResponse project = projectService.create(request, authentication);
+            JwtAuthenticationToken authentication,
+            HttpServletRequest httpRequest) {
+        ProjectResponse project = projectService.create(
+                request,
+                authentication,
+                AuditRequestContext.from(httpRequest));
         return ResponseEntity
                 .created(URI.create("/api/v1/projects/" + project.id()))
                 .body(project);
@@ -47,8 +53,12 @@ public class ProjectController {
     @GetMapping("/{id}")
     ProjectResponse findById(
             @PathVariable UUID id,
-            JwtAuthenticationToken authentication) {
-        return projectService.findById(id, authentication);
+            JwtAuthenticationToken authentication,
+            HttpServletRequest httpRequest) {
+        return projectService.findById(
+                id,
+                authentication,
+                AuditRequestContext.from(httpRequest));
     }
 
     @PutMapping("/{id}")
@@ -56,16 +66,25 @@ public class ProjectController {
     ProjectResponse update(
             @PathVariable UUID id,
             @Valid @RequestBody ProjectRequest request,
-            JwtAuthenticationToken authentication) {
-        return projectService.update(id, request, authentication);
+            JwtAuthenticationToken authentication,
+            HttpServletRequest httpRequest) {
+        return projectService.update(
+                id,
+                request,
+                authentication,
+                AuditRequestContext.from(httpRequest));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     ResponseEntity<Void> delete(
             @PathVariable UUID id,
-            JwtAuthenticationToken authentication) {
-        projectService.delete(id, authentication);
+            JwtAuthenticationToken authentication,
+            HttpServletRequest httpRequest) {
+        projectService.delete(
+                id,
+                authentication,
+                AuditRequestContext.from(httpRequest));
         return ResponseEntity.noContent().build();
     }
 }
