@@ -16,7 +16,7 @@ See [docs/00-project-plan.md](docs/00-project-plan.md) for the MVP plan.
 
 ```text
 backend/          Spring Boot resource server
-frontend/         Next.js application (future)
+frontend/         Next.js TypeScript application
 infra/keycloak/   Keycloak realm import files
 docs/             Project documentation
 ```
@@ -25,7 +25,7 @@ docs/             Project documentation
 
 1. Copy `.env.example` to `.env` and replace the local infrastructure
    passwords.
-2. Start PostgreSQL, Keycloak, and the backend:
+2. Start PostgreSQL, Keycloak, the backend, and the frontend:
 
    ```shell
    docker compose up -d --build
@@ -33,7 +33,8 @@ docs/             Project documentation
 
 3. Open Keycloak at `http://localhost:<KEYCLOAK_PORT>`. The default example
    uses port `8081`.
-4. Check the public backend endpoint:
+4. Open SecureTask at `http://localhost:3000`.
+5. Check the public backend endpoint:
 
    ```shell
    curl http://localhost:8080/api/v1/health
@@ -42,6 +43,51 @@ docs/             Project documentation
 The `securetask` realm, its roles, the `securetask-frontend` client, and demo
 users are imported automatically when Keycloak starts. Keycloak does not
 overwrite an existing realm with the same name.
+
+## Frontend
+
+The frontend runs at `http://localhost:3000`. It uses the public
+`securetask-frontend` Keycloak client with Authorization Code Flow and PKCE.
+Access tokens are held in memory by the Keycloak adapter and are not stored in
+`localStorage`.
+
+To run the frontend outside Docker:
+
+```shell
+cd frontend
+copy .env.local.example .env.local
+npm install
+npm run dev
+```
+
+The default local settings use:
+
+| Variable | Default |
+| --- | --- |
+| `NEXT_PUBLIC_KEYCLOAK_URL` | `http://localhost:8081` |
+| `NEXT_PUBLIC_KEYCLOAK_REALM` | `securetask` |
+| `NEXT_PUBLIC_KEYCLOAK_CLIENT_ID` | `securetask-frontend` |
+| `NEXT_PUBLIC_API_PROXY_PATH` | `/api/backend` |
+| `BACKEND_API_BASE_URL` | `http://localhost:8080/api/v1` |
+
+`NEXT_PUBLIC_*` values contain public URLs and identifiers only. The
+server-side `BACKEND_API_BASE_URL` points the Next.js proxy to the backend; in
+Docker Compose it uses `http://backend:8080/api/v1`. No client secret is
+required or included because the Keycloak client is public.
+
+### Demo Flow
+
+1. Open `http://localhost:3000` and sign in through Keycloak.
+2. Use `user1@example.com` / `User123!` to create a project, edit it, upload an
+   allowed document, and download it.
+3. Sign out and use `user2@example.com` / `User123!`. A direct request for the
+   first user's project or document is rejected by the backend and the
+   frontend shows the Forbidden page.
+4. Sign in as `auditor@example.com` / `Auditor123!` to open Audit logs.
+   Auditors can view audit data and document metadata made accessible by the
+   backend, but upload and download controls are not shown.
+5. Sign in as `admin@example.com` / `Admin123!` to view all projects, manage
+   documents, and inspect audit logs.
 
 ## Keycloak Login
 
