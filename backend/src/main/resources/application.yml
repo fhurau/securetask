@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: securetask-backend
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SECURITY_JWT_ISSUER_URI:http://localhost:8081/realms/securetask}
+          jwk-set-uri: ${SECURITY_JWT_JWK_SET_URI:http://localhost:8081/realms/securetask/protocol/openid-connect/certs}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

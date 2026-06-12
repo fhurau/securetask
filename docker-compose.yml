@@ -36,5 +36,18 @@ services:
       postgres:
         condition: service_healthy
 
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      SECURITY_JWT_ISSUER_URI: http://localhost:${KEYCLOAK_PORT:-8081}/realms/securetask
+      SECURITY_JWT_JWK_SET_URI: http://keycloak:8080/realms/securetask/protocol/openid-connect/certs
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      keycloak:
+        condition: service_started
+
 volumes:
   postgres_data:

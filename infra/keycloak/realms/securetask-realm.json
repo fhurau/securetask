@@ -55,6 +55,8 @@
     {
       "username": "admin@example.com",
       "email": "admin@example.com",
+      "firstName": "Demo",
+      "lastName": "Admin",
       "emailVerified": true,
       "enabled": true,
       "realmRoles": [
@@ -71,6 +73,8 @@
     {
       "username": "manager@example.com",
       "email": "manager@example.com",
+      "firstName": "Demo",
+      "lastName": "Manager",
       "emailVerified": true,
       "enabled": true,
       "realmRoles": [
@@ -87,6 +91,8 @@
     {
       "username": "user1@example.com",
       "email": "user1@example.com",
+      "firstName": "Demo",
+      "lastName": "User One",
       "emailVerified": true,
       "enabled": true,
       "realmRoles": [
@@ -103,6 +109,8 @@
     {
       "username": "user2@example.com",
       "email": "user2@example.com",
+      "firstName": "Demo",
+      "lastName": "User Two",
       "emailVerified": true,
       "enabled": true,
       "realmRoles": [
@@ -119,6 +127,8 @@
     {
       "username": "auditor@example.com",
       "email": "auditor@example.com",
+      "firstName": "Demo",
+      "lastName": "Auditor",
       "emailVerified": true,
       "enabled": true,
       "realmRoles": [
