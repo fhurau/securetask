@@ -1,0 +1,136 @@
+{
+  "realm": "securetask",
+  "enabled": true,
+  "displayName": "SecureTask",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "USER",
+        "description": "Standard SecureTask user"
+      },
+      {
+        "name": "MANAGER",
+        "description": "SecureTask manager"
+      },
+      {
+        "name": "ADMIN",
+        "description": "SecureTask administrator"
+      },
+      {
+        "name": "AUDITOR",
+        "description": "SecureTask auditor"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "securetask-frontend",
+      "name": "SecureTask Frontend",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "rootUrl": "http://localhost:3000",
+      "baseUrl": "http://localhost:3000",
+      "redirectUris": [
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:3000/*",
+        "pkce.code.challenge.method": "S256"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "admin@example.com",
+      "email": "admin@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "realmRoles": [
+        "ADMIN"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Admin123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "manager@example.com",
+      "email": "manager@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "realmRoles": [
+        "MANAGER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Manager123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "user1@example.com",
+      "email": "user1@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "realmRoles": [
+        "USER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "User123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "user2@example.com",
+      "email": "user2@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "realmRoles": [
+        "USER"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "User123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "auditor@example.com",
+      "email": "auditor@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "realmRoles": [
+        "AUDITOR"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Auditor123!",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
