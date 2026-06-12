@@ -1,6 +1,20 @@
 spring:
   application:
     name: securetask-backend
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/keycloak?currentSchema=securetask}
+    username: ${DATABASE_USERNAME:securetask}
+    password: ${DATABASE_PASSWORD:change-me-for-local-development}
+  flyway:
+    default-schema: securetask
+    schemas: securetask
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        default_schema: securetask
   security:
     oauth2:
       resourceserver:

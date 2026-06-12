@@ -41,11 +41,16 @@ services:
       context: ./backend
     restart: unless-stopped
     environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${APP_DATABASE_SCHEMA:-securetask}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       SECURITY_JWT_ISSUER_URI: http://localhost:${KEYCLOAK_PORT:-8081}/realms/securetask
       SECURITY_JWT_JWK_SET_URI: http://keycloak:8080/realms/securetask/protocol/openid-connect/certs
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
+      postgres:
+        condition: service_healthy
       keycloak:
         condition: service_started
 

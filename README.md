@@ -70,6 +70,11 @@ The backend uses Java 21, Spring Boot 3, and Maven. It runs at
 | --- | --- | --- |
 | `GET /api/v1/health` | Public | Returns `{"status":"UP"}` |
 | `GET /api/v1/me` | Bearer token | Returns the JWT username, email, and realm roles |
+| `POST /api/v1/projects` | `USER`, `ADMIN` | Creates a project |
+| `GET /api/v1/projects` | Authenticated | Lists accessible projects |
+| `GET /api/v1/projects/{id}` | Authenticated | Gets an accessible project |
+| `PUT /api/v1/projects/{id}` | `USER`, `ADMIN` | Updates an accessible project |
+| `DELETE /api/v1/projects/{id}` | `USER`, `ADMIN` | Deletes an accessible project |
 
 To run the backend outside Docker, start Keycloak first and then run:
 
@@ -93,3 +98,53 @@ Call the authenticated endpoint with an access token obtained through the
 ```shell
 curl -H "Authorization: Bearer <access-token>" http://localhost:8080/api/v1/me
 ```
+
+## Project API
+
+Projects are stored in the `securetask` PostgreSQL schema. Flyway creates and
+updates the schema automatically when the backend starts.
+
+Users can create projects and can read, update, or delete only projects they
+own. Administrators can access all projects. Auditors have read-only access,
+but ownership rules still apply.
+
+Set an access token in your shell before calling the examples:
+
+```shell
+ACCESS_TOKEN=<access-token>
+```
+
+Create a project:
+
+```shell
+curl -X POST http://localhost:8080/api/v1/projects \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Portfolio launch","description":"Prepare the SecureTask demo"}'
+```
+
+List accessible projects:
+
+```shell
+curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+  http://localhost:8080/api/v1/projects
+```
+
+Get, update, or delete one project:
+
+```shell
+curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+  http://localhost:8080/api/v1/projects/<project-id>
+
+curl -X PUT http://localhost:8080/api/v1/projects/<project-id> \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Updated name","description":"Updated description"}'
+
+curl -X DELETE \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  http://localhost:8080/api/v1/projects/<project-id>
+```
+
+Project names are required and limited to 100 characters. Descriptions are
+optional and limited to 1000 characters.
