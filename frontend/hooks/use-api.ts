@@ -16,8 +16,18 @@ export function useApi() {
         return await apiRequest(path, await getToken(), init);
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) {
-          invalidateSession();
-          router.push("/login?expired=1");
+          try {
+            return await apiRequest(path, await getToken(true), init);
+          } catch (retryError) {
+            if (retryError instanceof ApiError && retryError.status === 401) {
+              invalidateSession();
+              router.push("/login?expired=1");
+            }
+            if (retryError instanceof ApiError && retryError.status === 403) {
+              router.push("/forbidden");
+            }
+            throw retryError;
+          }
         }
         if (error instanceof ApiError && error.status === 403) {
           router.push("/forbidden");

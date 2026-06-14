@@ -7,6 +7,7 @@ import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
 import { Message } from "@/components/message";
+import { useProjectData } from "@/components/project-data-provider";
 import { useApi } from "@/hooks/use-api";
 import { downloadFilename } from "@/lib/api";
 import { formatBytes, formatDate } from "@/lib/format";
@@ -15,7 +16,8 @@ import type { DocumentMetadata, Project } from "@/types";
 export function ProjectDetail({ projectId }: { projectId: string }) {
   const api = useApi();
   const router = useRouter();
-  const { user } = useAuth();
+  const { ready, user } = useAuth();
+  const { invalidateProjects } = useProjectData();
   const [project, setProject] = useState<Project | null>(null);
   const [documents, setDocuments] = useState<DocumentMetadata[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -43,6 +45,8 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
   }, [api, projectId]);
 
   useEffect(() => {
+    if (!ready) return;
+
     let active = true;
 
     Promise.all([
@@ -72,7 +76,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     return () => {
       active = false;
     };
-  }, [api, projectId]);
+  }, [api, projectId, ready]);
 
   async function upload() {
     if (!selectedFile) return;
@@ -113,6 +117,7 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     if (!window.confirm("Delete this project? This cannot be undone.")) return;
     try {
       await api(`projects/${projectId}`, { method: "DELETE" });
+      invalidateProjects();
       router.push("/projects");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not delete project");

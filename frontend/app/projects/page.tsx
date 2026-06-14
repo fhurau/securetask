@@ -1,32 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/components/auth-provider";
 import { Message } from "@/components/message";
-import { useApi } from "@/hooks/use-api";
+import { useProjects } from "@/hooks/use-projects";
 import { formatDate } from "@/lib/format";
-import type { Project } from "@/types";
 
 export default function ProjectsPage() {
-  const api = useApi();
   const { user } = useAuth();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { projects, loading, error } = useProjects();
   const canCreate = user?.roles.some((role) => ["USER", "ADMIN"].includes(role));
-
-  useEffect(() => {
-    api("projects")
-      .then((response) => response.json())
-      .then((data: Project[]) => setProjects(data))
-      .catch((caught: unknown) =>
-        setError(caught instanceof Error ? caught.message : "Could not load projects"),
-      )
-      .finally(() => setLoading(false));
-  }, [api]);
 
   return (
     <AppShell>
@@ -44,6 +29,8 @@ export default function ProjectsPage() {
       <Message>{error}</Message>
       {loading ? (
         <div className="status-card">Loading projects...</div>
+      ) : error ? (
+        <div className="status-card">Project data is unavailable.</div>
       ) : projects.length === 0 ? (
         <div className="status-card">No accessible projects found.</div>
       ) : (

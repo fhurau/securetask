@@ -13,26 +13,40 @@ import type { AuditLog } from "@/types";
 export default function AuditLogsPage() {
   const api = useApi();
   const router = useRouter();
-  const { user } = useAuth();
+  const { ready, user } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!ready || !user) return;
+
     if (user && !user.roles.some((role) => ["ADMIN", "AUDITOR"].includes(role))) {
       router.replace("/forbidden");
       return;
     }
 
-    if (!user) return;
+    let active = true;
     api("audit-logs")
       .then((response) => response.json())
-      .then((data: AuditLog[]) => setLogs(data))
-      .catch((caught: unknown) =>
-        setError(caught instanceof Error ? caught.message : "Could not load audit logs"),
-      )
-      .finally(() => setLoading(false));
-  }, [api, router, user]);
+      .then((data: AuditLog[]) => {
+        if (active) setLogs(data);
+      })
+      .catch((caught: unknown) => {
+        if (active) {
+          setError(
+            caught instanceof Error ? caught.message : "Could not load audit logs",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [api, ready, router, user]);
 
   return (
     <AppShell>

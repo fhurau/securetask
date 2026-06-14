@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
 import { ProjectForm } from "@/components/project-form";
+import { useProjectData } from "@/components/project-data-provider";
 import { useApi } from "@/hooks/use-api";
 import type { Project } from "@/types";
 
 export default function CreateProjectPage() {
   const api = useApi();
   const router = useRouter();
+  const { invalidateProjects } = useProjectData();
 
   return (
     <AppShell>
@@ -27,6 +29,7 @@ export default function CreateProjectPage() {
             body: JSON.stringify(value),
           });
           const project = (await response.json()) as Project;
+          invalidateProjects();
           router.push(`/projects/${project.id}`);
         }}
       />

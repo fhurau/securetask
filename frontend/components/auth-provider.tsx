@@ -18,8 +18,10 @@ import type { CurrentUser } from "@/types";
 type AuthContextValue = {
   authenticated: boolean;
   loading: boolean;
+  ready: boolean;
+  sessionVersion: number;
   user: CurrentUser | null;
-  getToken: () => Promise<string>;
+  getToken: (forceRefresh?: boolean) => Promise<string>;
   invalidateSession: () => void;
   login: (returnTo?: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -42,32 +44,51 @@ function getKeycloak(): Keycloak {
   return keycloak;
 }
 
+function initializeKeycloak(): Promise<boolean> {
+  const client = getKeycloak();
+  initialization ??= client.init({
+    onLoad: "check-sso",
+    pkceMethod: "S256",
+    checkLoginIframe: false,
+  });
+  return initialization;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
+  const [tokenAvailable, setTokenAvailable] = useState(false);
+  const [sessionVersion, setSessionVersion] = useState(0);
   const [user, setUser] = useState<CurrentUser | null>(null);
 
-  const getToken = useCallback(async () => {
+  const getToken = useCallback(async (forceRefresh = false) => {
     const client = getKeycloak();
+    await initializeKeycloak();
     if (!client.authenticated) throw new Error("Authentication required");
 
     try {
-      await client.updateToken(30);
+      await client.updateToken(forceRefresh ? -1 : 30);
     } catch {
       client.clearToken();
       setAuthenticated(false);
+      setTokenAvailable(false);
       setUser(null);
       throw new Error("Your session expired. Please sign in again.");
     }
 
-    if (!client.token) throw new Error("Authentication required");
+    if (!client.token) {
+      setTokenAvailable(false);
+      throw new Error("Authentication required");
+    }
+    setTokenAvailable(true);
     return client.token;
   }, []);
 
   const invalidateSession = useCallback(() => {
     getKeycloak().clearToken();
     setAuthenticated(false);
+    setTokenAvailable(false);
     setUser(null);
   }, []);
 
@@ -79,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     setAuthenticated(false);
+    setTokenAvailable(false);
     setUser(null);
     await getKeycloak().logout({
       redirectUri: `${window.location.origin}/login`,
@@ -88,24 +110,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     const client = getKeycloak();
-    initialization ??= client.init({
-      onLoad: "check-sso",
-      pkceMethod: "S256",
-      checkLoginIframe: false,
-    });
 
-    initialization
+    initializeKeycloak()
       .then(async (isAuthenticated) => {
         if (!active) return;
         setAuthenticated(isAuthenticated);
+        setTokenAvailable(false);
 
-        if (isAuthenticated && client.token) {
+        if (isAuthenticated) {
           try {
+            await client.updateToken(30);
+            if (!client.token) throw new Error("Authentication required");
+
             const response = await apiRequest("me", client.token);
-            if (active) setUser((await response.json()) as CurrentUser);
+            const currentUser = (await response.json()) as CurrentUser;
+            if (active) {
+              // Ready means identity and a refreshed token are both usable.
+              setUser(currentUser);
+              setTokenAvailable(true);
+              setSessionVersion((current) => current + 1);
+            }
           } catch {
             if (active) {
               setAuthenticated(false);
+              setTokenAvailable(false);
               setUser(null);
             }
           }
@@ -131,6 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       authenticated,
       loading,
+      ready: !loading && authenticated && tokenAvailable && user !== null,
+      sessionVersion,
       user,
       getToken,
       invalidateSession,
@@ -144,6 +174,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       login,
       logout,
+      sessionVersion,
+      tokenAvailable,
       user,
     ],
   );
