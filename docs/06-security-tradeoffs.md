@@ -16,6 +16,7 @@ complexity.
 | Database audit table | Easy to query in the application demo | Not immutable, centralized, independently retained, or connected to alerts |
 | Trivy ignores unfixed findings and fails on fixable high/critical issues | Keeps CI actionable for remediable severe dependency findings | Lower severities and unfixed vulnerabilities still require periodic review |
 | Version-tagged GitHub Actions | Readable and receives upstream fixes | Commit-SHA pinning would provide stronger workflow dependency integrity |
+| Local-demo CSP and response headers | Blocks framing, plugins, broad referrer leakage, and unexpected content sources without breaking Keycloak or Swagger | Allows inline styles and frontend inline scripts; production should use HTTPS and deployment-specific nonce/hash policies |
 | Local HTTP and committed demo users | Fast, reproducible recruiter demo | Credentials and transport are unsuitable for shared or production environments |
 
 ## Deliberately Not Claimed
@@ -24,4 +25,3 @@ The project does not claim zero vulnerabilities, OWASP compliance,
 production-grade identity configuration, secure hosting, regulatory
 compliance, penetration-test coverage, or a complete secure software
 development lifecycle.
-

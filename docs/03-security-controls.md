@@ -47,6 +47,20 @@ signatures or scan content for malware.
   or document bytes.
 - Only `ADMIN` and `AUDITOR` roles can list audit records.
 
+## Browser and Response Headers
+
+- Frontend and backend responses set `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: same-origin`, a restrictive `Permissions-Policy`, and
+  `X-Frame-Options: DENY`.
+- Both surfaces set a basic Content Security Policy with same-origin defaults,
+  blocked plugins, restricted base URIs, and `frame-ancestors 'none'`.
+- The frontend allows connections to the configured local Keycloak origin.
+- The backend allows same-origin Swagger assets and Swagger's required inline
+  styles.
+
+The policies are designed for the HTTP localhost demo. They do not use
+per-response nonces or hashes and are not a production deployment policy.
+
 ## Delivery Controls
 
 GitHub Actions runs on pushes to `main`, pull requests, and manual dispatch:
@@ -60,8 +74,7 @@ GitHub Actions runs on pushes to `main`, pull requests, and manual dispatch:
 
 ## Controls Not Implemented
 
-TLS configuration, rate limiting, malware scanning, CSP/security-header
-hardening, encryption-at-rest design, centralized monitoring and alerting,
+TLS configuration, rate limiting, malware scanning, production CSP design,
+encryption-at-rest design, centralized monitoring and alerting,
 tamper-resistant audit storage, automated backup/restore, runtime container
 scanning, DAST, SAST beyond lint/tests, and production secrets management.
-

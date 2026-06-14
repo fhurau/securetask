@@ -161,6 +161,24 @@ available at `http://localhost:8080/v3/api-docs`. Documentation endpoints are
 public for local review; protected API operations still require a Keycloak
 access token through Swagger UI's **Authorize** button.
 
+## Security Headers
+
+The Next.js frontend and Spring Boot backend send a local-demo header baseline:
+
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: same-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- `X-Frame-Options: DENY`
+- Content Security Policy restricting content to expected local sources
+
+The frontend CSP permits browser connections to the configured Keycloak
+origin, which defaults to `http://localhost:8081`. The backend CSP permits
+same-origin Swagger UI assets and inline styles required by Swagger UI.
+
+These policies are deliberately compatible with the HTTP-based local demo.
+They are not a production CSP or a substitute for HTTPS, nonce/hash-based
+script policies, deployment-specific origins, or reverse-proxy hardening.
+
 To run the backend outside Docker, start Keycloak first and then run:
 
 ```shell
