@@ -5,6 +5,11 @@ import java.util.List;
 import java.util.UUID;
 
 import com.securetask.backend.audit.AuditRequestContext;
+import com.securetask.backend.config.OpenApiConfig;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
@@ -23,6 +28,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/projects/{projectId}/documents")
+@Tag(name = "Documents")
+@SecurityRequirement(name = OpenApiConfig.BEARER_SCHEME)
 public class DocumentController {
 
     private final DocumentService documentService;
@@ -33,8 +40,12 @@ public class DocumentController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @Operation(
+            summary = "Upload a project document",
+            description = "Uploads an allowed file up to 5 MB. Requires project content access.")
     ResponseEntity<DocumentResponse> upload(
             @PathVariable UUID projectId,
+            @Parameter(description = "PDF, TXT, PNG, JPG, or JPEG file.", required = true)
             @RequestPart("file") MultipartFile file,
             JwtAuthenticationToken authentication,
             HttpServletRequest request) {
@@ -50,6 +61,9 @@ public class DocumentController {
     }
 
     @GetMapping
+    @Operation(
+            summary = "List document metadata",
+            description = "Lists metadata for an accessible project without returning file content.")
     List<DocumentResponse> findAll(
             @PathVariable UUID projectId,
             JwtAuthenticationToken authentication,
@@ -62,6 +76,9 @@ public class DocumentController {
 
     @GetMapping("/{documentId}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @Operation(
+            summary = "Download a project document",
+            description = "Downloads file content when the caller has project content access.")
     ResponseEntity<Resource> download(
             @PathVariable UUID projectId,
             @PathVariable UUID documentId,

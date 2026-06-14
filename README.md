@@ -155,6 +155,12 @@ The backend uses Java 21, Spring Boot 3, and Maven. It runs at
 | `GET /api/v1/projects/{id}/documents/{documentId}` | `USER`, `ADMIN` | Downloads accessible file content |
 | `GET /api/v1/audit-logs` | `ADMIN`, `AUDITOR` | Lists audit events newest first |
 
+Swagger UI is available locally at
+`http://localhost:8080/swagger-ui.html`. The generated OpenAPI document is
+available at `http://localhost:8080/v3/api-docs`. Documentation endpoints are
+public for local review; protected API operations still require a Keycloak
+access token through Swagger UI's **Authorize** button.
+
 To run the backend outside Docker, start Keycloak first and then run:
 
 ```shell

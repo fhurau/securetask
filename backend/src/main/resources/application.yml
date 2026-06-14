@@ -32,6 +32,12 @@ management:
       exposure:
         include: health
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+
 securetask:
   documents:
     storage-path: ${DOCUMENT_STORAGE_PATH:./data/uploads}
