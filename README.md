@@ -7,8 +7,7 @@ The demo includes OAuth2/OIDC login with PKCE, Project CRUD, object-level
 authorization, audit logging, controlled document upload/download,
 Swagger/OpenAPI, security headers, and GitHub Actions security checks.
 
-> **Screenshot placeholder:** Dashboard showing the authenticated user,
-> accessible project count, and security-focused navigation.
+![SecureTask dashboard](docs/assets/dashboard.png)
 
 ## Quick Start
 
@@ -71,11 +70,9 @@ Do not reuse them in a shared or production environment.
 4. Run the smoke test to repeat the core positive and negative security checks
    non-interactively.
 
-> **Screenshot placeholder:** Project page with document metadata and upload
-> controls.
+![Project detail and document upload](docs/assets/project-detail.png)
 
-> **Screenshot placeholder:** Audit Logs page showing allowed and denied
-> actions with correlation IDs.
+![Audit log review](docs/assets/audit-logs.png)
 
 ## Security Design
 
