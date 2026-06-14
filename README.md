@@ -54,6 +54,35 @@ The `securetask` realm, its roles, the `securetask-frontend` client, and demo
 users are imported automatically when Keycloak starts. Keycloak does not
 overwrite an existing realm with the same name.
 
+## Reviewer Smoke Test
+
+With Docker Compose services already running, execute:
+
+```powershell
+docker compose up -d --build
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1
+```
+
+The script checks service reachability, protected endpoint authentication,
+frontend-client direct-grant rejection, object-level authorization, allowed
+and rejected uploads, downloads, and audit-log roles. It creates temporary
+data and removes the project, local upload bytes, and temporary files even
+when a check fails.
+
+URLs, realm, client IDs, demo users, passwords, and upload storage path can be
+overridden with PowerShell parameters. The defaults match this repository's
+local Docker Compose environment. The script never prints tokens or passwords.
+
+The `securetask-smoke-test` Keycloak client exists only for this local
+non-interactive test. It is separate from `securetask-frontend`; the frontend
+client remains Authorization Code Flow with S256 PKCE and direct access grants
+disabled.
+
+If the `securetask` realm already existed before the smoke client was added,
+Keycloak will skip the updated import. Recreate the local demo realm/database
+before running the script if the smoke client is missing. This removes local
+demo data, so do it only when that reset is acceptable.
+
 ## Security CI
 
 GitHub Actions runs the workflow in

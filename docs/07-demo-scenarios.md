@@ -71,6 +71,19 @@ Open `.github/workflows/security-ci.yml` and the latest workflow run:
 **Security point:** CI supplies repeatable preventive checks, not a guarantee
 that the application is vulnerability-free.
 
+## 6. Reviewer Smoke Test
+
+Run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1
+```
+
+The script uses the separate local-only `securetask-smoke-test` client to
+verify authentication, cross-user project denial, upload restrictions,
+downloads, and audit-log roles. It also confirms that direct password grants
+remain disabled on `securetask-frontend` and cleans up its temporary data.
+
 ## Close With the Limitations
 
 State plainly that this is a local demonstration: HTTP and Keycloak dev mode,

@@ -49,6 +49,17 @@
         "post.logout.redirect.uris": "http://localhost:3000/*",
         "pkce.code.challenge.method": "S256"
       }
+    },
+    {
+      "clientId": "securetask-smoke-test",
+      "name": "SecureTask Local Smoke Test",
+      "description": "Local-demo testing client only; not used by the frontend or intended for production.",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false
     }
   ],
   "users": [

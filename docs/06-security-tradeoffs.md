@@ -17,6 +17,7 @@ complexity.
 | Trivy ignores unfixed findings and fails on fixable high/critical issues | Keeps CI actionable for remediable severe dependency findings | Lower severities and unfixed vulnerabilities still require periodic review |
 | Version-tagged GitHub Actions | Readable and receives upstream fixes | Commit-SHA pinning would provide stronger workflow dependency integrity |
 | Local-demo CSP and response headers | Blocks framing, plugins, broad referrer leakage, and unexpected content sources without breaking Keycloak or Swagger | Allows inline styles and frontend inline scripts; production should use HTTPS and deployment-specific nonce/hash policies |
+| Separate direct-grant smoke client | Enables a one-command, non-interactive local security test without weakening the PKCE frontend client | Resource-owner password grants and committed demo credentials are local-only; production automation needs dedicated identities, secret management, rotation, and stronger grant policies |
 | Local HTTP and committed demo users | Fast, reproducible recruiter demo | Credentials and transport are unsuitable for shared or production environments |
 
 ## Deliberately Not Claimed

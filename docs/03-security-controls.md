@@ -14,6 +14,7 @@ production readiness or certification.
 | Function authorization | `@PreAuthorize` restricts project mutation, document content operations, and audit-log access |
 | Object authorization | Project owner subject IDs are checked in backend services; `ADMIN` can access all projects |
 | Auditor boundary | `AUDITOR` can read audit logs and document metadata, but cannot mutate projects or upload/download files |
+| Reviewer smoke test | A local PowerShell script verifies authentication, object authorization, upload controls, downloads, and audit roles without changing application security settings |
 
 Frontend route guards and hidden controls improve usability only. The Spring
 Boot backend is the security enforcement point.
@@ -60,6 +61,18 @@ signatures or scan content for malware.
 
 The policies are designed for the HTTP localhost demo. They do not use
 per-response nonces or hashes and are not a production deployment policy.
+
+## Local Test Client
+
+- `securetask-frontend` remains a public browser client using Authorization
+  Code Flow and S256 PKCE. Direct access grants are disabled.
+- `securetask-smoke-test` is a separate public client with direct grants
+  enabled only to obtain non-interactive tokens for the local reviewer script.
+- The smoke script verifies that password grants still fail for
+  `securetask-frontend`.
+
+The smoke client and committed demo passwords are local testing conveniences,
+not a production automation identity or credential policy.
 
 ## Delivery Controls
 
