@@ -8,9 +8,19 @@ application built with:
 - PostgreSQL
 - Keycloak
 
-The project will be developed in small phases, starting with local
-infrastructure and authentication before adding task-management features.
-See [docs/00-project-plan.md](docs/00-project-plan.md) for the MVP plan.
+The current local demo includes authentication, Project CRUD, object-level
+authorization, audit logging, controlled document handling, and security CI.
+
+## Documentation
+
+- [MVP project plan](docs/00-project-plan.md)
+- [Architecture](docs/01-architecture.md)
+- [Threat model](docs/02-threat-model.md)
+- [Security controls](docs/03-security-controls.md)
+- [OWASP Top 10 mappings](docs/04-owasp-mapping.md)
+- [Audit logging](docs/05-audit-logging.md)
+- [Security tradeoffs](docs/06-security-tradeoffs.md)
+- [AppSec demo scenarios](docs/07-demo-scenarios.md)
 
 ## Repository Layout
 
