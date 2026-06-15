@@ -10,7 +10,13 @@ RUN mvn verify
 FROM eclipse-temurin:21-jre
 
 WORKDIR /app
-COPY --from=build /workspace/target/securetask-backend-*.jar app.jar
+RUN groupadd --system app \
+    && useradd --system --gid app --home-dir /app --shell /usr/sbin/nologin app \
+    && mkdir -p /app/data/uploads \
+    && chown -R app:app /app
+
+COPY --from=build --chown=app:app /workspace/target/securetask-backend-*.jar app.jar
 
 EXPOSE 8080
+USER app
 ENTRYPOINT ["java", "-jar", "app.jar"]

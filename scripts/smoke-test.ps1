@@ -7,6 +7,8 @@ param(
     [string]$FrontendClientId = "securetask-frontend",
     [string]$OpenApiUrl = "",
     [string]$UploadStoragePath = "",
+    [ValidateRange(1, 600)]
+    [int]$StartupTimeoutSeconds = 90,
     [string]$User1Username = "user1@example.com",
     [string]$User1Password = "User123!",
     [string]$User2Username = "user2@example.com",
@@ -95,6 +97,66 @@ function Invoke-Http {
     }
     finally {
         $request.Dispose()
+    }
+}
+
+function Invoke-PreflightHttp {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Net.Http.HttpMethod]$Method,
+        [Parameter(Mandatory = $true)]
+        [string]$Url,
+        [Parameter(Mandatory = $true)]
+        [int]$ExpectedStatus,
+        [Parameter(Mandatory = $true)]
+        [string]$Check,
+        [Parameter(Mandatory = $true)]
+        [string]$WaitMessage,
+        [Parameter(Mandatory = $true)]
+        [string]$Action,
+        [scriptblock]$IsReady
+    )
+
+    $lastResult = "No response received."
+    while ($true) {
+        try {
+            $response = Invoke-Http -Method $Method -Url $Url
+            if ($response.StatusCode -eq $ExpectedStatus) {
+                $ready = $true
+                if ($null -ne $IsReady) {
+                    try {
+                        $ready = [bool](& $IsReady $response)
+                    }
+                    catch {
+                        $ready = $false
+                    }
+                }
+                if ($ready) {
+                    return $response
+                }
+                $lastResult = "Received HTTP $($response.StatusCode), but the service did not report ready."
+            }
+            elseif ($response.StatusCode -ge 500 -and $response.StatusCode -le 599) {
+                $lastResult = "Received temporary HTTP $($response.StatusCode)."
+            }
+            else {
+                throw "$Check expected HTTP $ExpectedStatus but received HTTP $($response.StatusCode). $Action"
+            }
+        }
+        catch {
+            if ($_.Exception.Message -like "$Check expected HTTP*") {
+                throw
+            }
+            $lastResult = "The HTTP request could not be completed."
+        }
+
+        $remaining = $script:StartupDeadline - [DateTimeOffset]::UtcNow
+        if ($remaining.TotalSeconds -le 0) {
+            throw "Startup readiness timed out after $StartupTimeoutSeconds seconds while waiting for $Check. $lastResult $Action"
+        }
+
+        Write-Host "WAIT  $WaitMessage" -ForegroundColor Yellow
+        Start-Sleep -Milliseconds ([Math]::Min(2000, [Math]::Max(1, $remaining.TotalMilliseconds)))
     }
 }
 
@@ -197,25 +259,44 @@ try {
 
     $script:InitialUploadFiles = Snapshot-UploadFiles -Path $UploadStoragePath
 
-    $discovery = Invoke-Http -Method ([System.Net.Http.HttpMethod]::Get) -Url $discoveryUrl
+    $script:StartupDeadline =
+        [DateTimeOffset]::UtcNow.AddSeconds($StartupTimeoutSeconds)
+
+    $discovery = Invoke-PreflightHttp -Method ([System.Net.Http.HttpMethod]::Get) `
+        -Url $discoveryUrl -ExpectedStatus 200 `
+        -Check "Keycloak discovery endpoint" `
+        -WaitMessage "Keycloak discovery endpoint is not ready yet, retrying..." `
+        -Action "Check KeycloakUrl, Realm, and the running Docker Compose services."
     Assert-Status $discovery 200 "Keycloak discovery endpoint is reachable" `
         "Check KeycloakUrl, Realm, and the running Docker Compose services."
 
-    $health = Invoke-Http -Method ([System.Net.Http.HttpMethod]::Get) `
-        -Url "$BackendApiUrl/health"
+    $health = Invoke-PreflightHttp -Method ([System.Net.Http.HttpMethod]::Get) `
+        -Url "$BackendApiUrl/health" -ExpectedStatus 200 `
+        -Check "backend health endpoint" `
+        -WaitMessage "Backend health endpoint is not ready yet, retrying..." `
+        -Action "Check BackendApiUrl and backend container logs." `
+        -IsReady {
+            param($Response)
+            return ($Response.Text | ConvertFrom-Json).status -eq "UP"
+        }
     Assert-Status $health 200 "Backend health endpoint is reachable" `
         "Check BackendApiUrl and backend container logs."
-    if (($health.Text | ConvertFrom-Json).status -ne "UP") {
-        throw "Backend health response did not report status UP."
-    }
     Write-Pass "Backend health reports UP"
 
-    $openApi = Invoke-Http -Method ([System.Net.Http.HttpMethod]::Get) -Url $OpenApiUrl
+    $openApi = Invoke-PreflightHttp -Method ([System.Net.Http.HttpMethod]::Get) `
+        -Url $OpenApiUrl -ExpectedStatus 200 `
+        -Check "OpenAPI endpoint" `
+        -WaitMessage "OpenAPI endpoint is not ready yet, retrying..." `
+        -Action "Set -OpenApiUrl when the backend uses a custom documentation path."
     Assert-Status $openApi 200 "OpenAPI document is reachable" `
         "Set -OpenApiUrl when the backend uses a custom documentation path."
 
-    $anonymousProjects = Invoke-Http -Method ([System.Net.Http.HttpMethod]::Get) `
-        -Url "$BackendApiUrl/projects"
+    $anonymousProjects = Invoke-PreflightHttp `
+        -Method ([System.Net.Http.HttpMethod]::Get) `
+        -Url "$BackendApiUrl/projects" -ExpectedStatus 401 `
+        -Check "unauthenticated projects check" `
+        -WaitMessage "Unauthenticated projects check is not ready yet, retrying..." `
+        -Action "The protected endpoint must not be public."
     Assert-Status $anonymousProjects 401 "Projects reject unauthenticated requests" `
         "The protected endpoint must not be public."
 
