@@ -6,7 +6,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import com.securetask.backend.audit.AuditLogService;
+import com.securetask.backend.audit.AuditEventProducer;
 import com.securetask.backend.audit.AuditRequestContext;
 import com.securetask.backend.project.ProjectAuthorizationService;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,19 +33,19 @@ class DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentStorageService storageService;
     private final ProjectAuthorizationService projectAuthorizationService;
-    private final AuditLogService auditLogService;
+    private final AuditEventProducer auditEventProducer;
     private final long maxSizeBytes;
 
     DocumentService(
             DocumentRepository documentRepository,
             DocumentStorageService storageService,
             ProjectAuthorizationService projectAuthorizationService,
-            AuditLogService auditLogService,
+            AuditEventProducer auditEventProducer,
             @Value("${securetask.documents.max-size-bytes}") long maxSizeBytes) {
         this.documentRepository = documentRepository;
         this.storageService = storageService;
         this.projectAuthorizationService = projectAuthorizationService;
-        this.auditLogService = auditLogService;
+        this.auditEventProducer = auditEventProducer;
         this.maxSizeBytes = maxSizeBytes;
     }
 
@@ -64,7 +64,7 @@ class DocumentService {
         try {
             validatedFile = validate(file);
         } catch (ResponseStatusException exception) {
-            auditLogService.record(
+            auditEventProducer.publish(
                     authentication,
                     "DOCUMENT_UPLOAD_REJECTED",
                     "PROJECT",
@@ -87,7 +87,7 @@ class DocumentService {
         try {
             storageService.store(validatedFile.storedFilename(), file.getInputStream());
             Document savedDocument = documentRepository.saveAndFlush(document);
-            auditLogService.record(
+            auditEventProducer.publish(
                     authentication,
                     "DOCUMENT_UPLOADED",
                     "DOCUMENT",
@@ -140,7 +140,7 @@ class DocumentService {
                 document.getOriginalFilename(),
                 document.getContentType(),
                 document.getSizeBytes());
-        auditLogService.record(
+        auditEventProducer.publish(
                 authentication,
                 "DOCUMENT_DOWNLOADED",
                 "DOCUMENT",

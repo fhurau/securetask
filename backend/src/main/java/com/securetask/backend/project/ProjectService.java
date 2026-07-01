@@ -3,7 +3,7 @@ package com.securetask.backend.project;
 import java.util.List;
 import java.util.UUID;
 
-import com.securetask.backend.audit.AuditLogService;
+import com.securetask.backend.audit.AuditEventProducer;
 import com.securetask.backend.audit.AuditRequestContext;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
@@ -19,13 +19,13 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 class ProjectService {
 
     private final ProjectRepository projectRepository;
-    private final AuditLogService auditLogService;
+    private final AuditEventProducer auditEventProducer;
 
     ProjectService(
             ProjectRepository projectRepository,
-            AuditLogService auditLogService) {
+            AuditEventProducer auditEventProducer) {
         this.projectRepository = projectRepository;
-        this.auditLogService = auditLogService;
+        this.auditEventProducer = auditEventProducer;
     }
 
     @Transactional
@@ -40,7 +40,7 @@ class ProjectService {
                 jwt.getSubject(),
                 jwt.getClaimAsString("email"));
         Project savedProject = projectRepository.save(project);
-        auditLogService.record(
+        auditEventProducer.publish(
                 authentication,
                 "PROJECT_CREATED",
                 savedProject.getId(),
@@ -66,7 +66,7 @@ class ProjectService {
             AuditRequestContext auditContext) {
         Project project = getProject(id);
         requireOwnerOrAdmin(project, authentication, auditContext);
-        auditLogService.record(
+        auditEventProducer.publish(
                 authentication,
                 "PROJECT_VIEWED",
                 project.getId(),
@@ -84,7 +84,7 @@ class ProjectService {
         Project project = getProject(id);
         requireOwnerOrAdmin(project, authentication, auditContext);
         project.update(request.name(), request.description());
-        auditLogService.record(
+        auditEventProducer.publish(
                 authentication,
                 "PROJECT_UPDATED",
                 project.getId(),
@@ -101,7 +101,7 @@ class ProjectService {
         Project project = getProject(id);
         requireOwnerOrAdmin(project, authentication, auditContext);
         projectRepository.delete(project);
-        auditLogService.record(
+        auditEventProducer.publish(
                 authentication,
                 "PROJECT_DELETED",
                 project.getId(),
@@ -120,7 +120,7 @@ class ProjectService {
             AuditRequestContext auditContext) {
         if (!isAdmin(authentication)
                 && !project.getOwnerUserId().equals(authentication.getToken().getSubject())) {
-            auditLogService.record(
+            auditEventProducer.publish(
                     authentication,
                     "ACCESS_DENIED",
                     project.getId(),

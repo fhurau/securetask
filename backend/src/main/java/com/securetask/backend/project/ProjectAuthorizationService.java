@@ -2,7 +2,7 @@ package com.securetask.backend.project;
 
 import java.util.UUID;
 
-import com.securetask.backend.audit.AuditLogService;
+import com.securetask.backend.audit.AuditEventProducer;
 import com.securetask.backend.audit.AuditRequestContext;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -16,13 +16,13 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class ProjectAuthorizationService {
 
     private final ProjectRepository projectRepository;
-    private final AuditLogService auditLogService;
+    private final AuditEventProducer auditEventProducer;
 
     ProjectAuthorizationService(
             ProjectRepository projectRepository,
-            AuditLogService auditLogService) {
+            AuditEventProducer auditEventProducer) {
         this.projectRepository = projectRepository;
-        this.auditLogService = auditLogService;
+        this.auditEventProducer = auditEventProducer;
     }
 
     @Transactional(readOnly = true)
@@ -59,7 +59,7 @@ public class ProjectAuthorizationService {
             UUID projectId,
             JwtAuthenticationToken authentication,
             AuditRequestContext auditContext) {
-        auditLogService.record(
+        auditEventProducer.publish(
                 authentication,
                 "ACCESS_DENIED",
                 "PROJECT",
