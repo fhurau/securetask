@@ -1,6 +1,6 @@
 # Security Tradeoffs
 
-SecureTask favors a small, inspectable local demo over production operational
+distributed-auth-platform favors a small, inspectable local demo over production operational
 complexity.
 
 | Decision | Benefit | Tradeoff / production follow-up |

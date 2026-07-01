@@ -1,13 +1,14 @@
-# SecureTask
+# distributed-auth-platform
 
-SecureTask is a local portfolio application demonstrating security controls in
-a full-stack system built with Next.js, Spring Boot, PostgreSQL, and Keycloak.
+distributed-auth-platform is a local portfolio application demonstrating
+security controls in a full-stack system built with Next.js, Spring Boot,
+PostgreSQL, and Keycloak.
 
 The demo includes OAuth2/OIDC login with PKCE, Project CRUD, object-level
 authorization, audit logging, controlled document upload/download,
 Swagger/OpenAPI, security headers, and GitHub Actions security checks.
 
-![SecureTask dashboard](docs/assets/dashboard.png)
+![distributed-auth-platform dashboard](docs/assets/dashboard.png)
 
 ## Quick Start
 
@@ -78,7 +79,7 @@ layer.
 Metrics: the backend exposes Prometheus-format metrics at
 `/actuator/prometheus` (unauthenticated - see
 [Local-Demo Limitations](#local-demo-limitations)); Prometheus scrapes it
-every 15s; Grafana's "SecureTask Backend Overview" dashboard (provisioned
+every 15s; Grafana's "distributed-auth-platform Backend Overview" dashboard (provisioned
 from [`infra/grafana/provisioning/dashboards/backend-overview.json`](infra/grafana/provisioning/dashboards/backend-overview.json)
 on startup, not built by hand) shows request rate, p95 latency, and error
 rate. Every backend log line is structured JSON (Elastic Common Schema) and
@@ -89,7 +90,7 @@ traffic.
 ## Kubernetes (Demonstration)
 
 **This section is optional and is not required to try the project.**
-docker-compose above is the only supported way to run SecureTask locally.
+docker-compose above is the only supported way to run distributed-auth-platform locally.
 The manifests under [`deploy/k8s/`](deploy/k8s/) exist to demonstrate
 deployment readiness - that the same containers can run under a real
 orchestrator, with health probes, startup ordering, and service discovery -

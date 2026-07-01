@@ -7,7 +7,7 @@ import { ProjectDataProvider } from "@/components/project-data-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SecureTask",
+  title: "distributed-auth-platform",
   description: "Secure project and document management",
 };
 
