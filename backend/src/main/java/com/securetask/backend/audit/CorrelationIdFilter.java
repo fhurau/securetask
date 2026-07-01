@@ -9,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -18,6 +19,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
     public static final String CORRELATION_ID_HEADER = "X-Correlation-ID";
     public static final String CORRELATION_ID_ATTRIBUTE =
             CorrelationIdFilter.class.getName() + ".correlationId";
+    public static final String CORRELATION_ID_MDC_KEY = "correlationId";
 
     private static final Pattern SAFE_CORRELATION_ID =
             Pattern.compile("[A-Za-z0-9._-]{1,100}");
@@ -34,6 +36,14 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
 
         request.setAttribute(CORRELATION_ID_ATTRIBUTE, correlationId);
         response.setHeader(CORRELATION_ID_HEADER, correlationId);
-        filterChain.doFilter(request, response);
+        // MDC is thread-bound, and servlet container threads are pooled and
+        // reused across unrelated requests - always clear it, even on error,
+        // or it leaks into the next request logged on this thread.
+        MDC.put(CORRELATION_ID_MDC_KEY, correlationId);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            MDC.remove(CORRELATION_ID_MDC_KEY);
+        }
     }
 }
