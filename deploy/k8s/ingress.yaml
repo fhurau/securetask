@@ -1,0 +1,33 @@
+# Requires an ingress controller (e.g. ingress-nginx) installed in the
+# cluster - kind does not ship one by default. The CI deploy job does NOT
+# install one (see README.md "Kubernetes (Demonstration)" for why); it
+# smoke-tests via `kubectl port-forward` instead. This manifest is provided
+# so anyone running the stack locally with kind can install ingress-nginx
+# themselves and route through it if they want to exercise this path too.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: securetask
+  namespace: securetask
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: securetask.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
