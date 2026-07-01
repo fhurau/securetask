@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Projects\\securetask\\.claude\\hooks\\format-frontend.ps1\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
