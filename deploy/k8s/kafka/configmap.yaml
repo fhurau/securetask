@@ -15,6 +15,12 @@ data:
   KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
   KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
   KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+  # localhost, not the "kafka" Service DNS name: this single node connects to
+  # itself as the sole controller-quorum member. Routing that self-connection
+  # through Service DNS made it a race against CoreDNS's own readiness in a
+  # freshly created cluster - observed in CI as a fatal
+  # java.net.UnknownHostException: kafka a few seconds into every boot,
+  # crash-looping the pod forever. localhost has no such dependency.
+  KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
   KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
   KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
