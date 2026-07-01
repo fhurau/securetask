@@ -30,6 +30,9 @@ After the containers finish starting, open:
 - Frontend: [http://localhost:3000](http://localhost:3000)
 - Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 - Keycloak: [http://localhost:8081](http://localhost:8081)
+- Prometheus: [http://localhost:9090](http://localhost:9090)
+- Grafana: [http://localhost:3001](http://localhost:3001) (`admin` /
+  `GRAFANA_ADMIN_PASSWORD` from `.env`)
 
 Run the automated reviewer checks:
 
@@ -45,6 +48,43 @@ passwords, and exits nonzero when a control does not behave as expected.
 Keycloak imports the `securetask` realm only when it does not already exist.
 If an older local realm is present, remove the local Docker volumes and start
 again only when deleting local demo data is acceptable.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Browser[Browser] -->|OIDC Authorization Code + PKCE| Keycloak[Keycloak]
+    Browser -->|Bearer token| Frontend[Next.js frontend / API proxy]
+    Frontend -->|Bearer token| Backend[Spring Boot API]
+    Backend -->|Validate JWT/JWKS| Keycloak
+    Backend -->|Audit events| Kafka[(Kafka)]
+    Kafka -->|Consume| Backend
+    Backend -->|Cache, token blacklist, rate limits| Redis[(Redis)]
+    Backend -->|JPA/Flyway| Postgres[(PostgreSQL)]
+    Keycloak -->|Realm/user data| Postgres
+    Prometheus[Prometheus] -->|Scrape /actuator/prometheus| Backend
+    Grafana[Grafana] -->|Query| Prometheus
+```
+
+The backend both publishes to and consumes from Kafka: services publish an
+`AuditEvent` to the `audit-events` topic instead of writing audit rows
+directly, and a consumer in the same application reads that topic and
+performs the actual write to PostgreSQL (see
+[Kafka-based audit event streaming](docs/05-audit-logging.md) for why).
+Redis backs three independent features - the project-list cache, the JWT
+revocation blacklist, and the per-user rate limiter - not a single cache
+layer.
+
+Metrics: the backend exposes Prometheus-format metrics at
+`/actuator/prometheus` (unauthenticated - see
+[Local-Demo Limitations](#local-demo-limitations)); Prometheus scrapes it
+every 15s; Grafana's "SecureTask Backend Overview" dashboard (provisioned
+from [`infra/grafana/provisioning/dashboards/backend-overview.json`](infra/grafana/provisioning/dashboards/backend-overview.json)
+on startup, not built by hand) shows request rate, p95 latency, and error
+rate. Every backend log line is structured JSON (Elastic Common Schema) and
+carries the `X-Correlation-ID` request header as a `correlationId` field, so
+a single request's log lines can be traced by that ID even under concurrent
+traffic.
 
 ## Kubernetes (Demonstration)
 
@@ -212,8 +252,15 @@ blueprint.
   Swagger UI; production should use HTTPS and deployment-specific,
   nonce/hash-based policies.
 - Audit logs have no external retention, alerting, or tamper-evident storage.
-- Availability, backup, rate limiting, monitoring, and key-rotation controls
-  are outside this demo's scope.
+- `/actuator/prometheus` is unauthenticated (permitted alongside the health
+  endpoints) so local Prometheus can scrape it without a scrape credential;
+  a real deployment would put it behind network policy or a scrape-only
+  token instead of exposing it openly.
+- Prometheus and Grafana run without persistent storage or alerting rules
+  configured - metrics reset on container recreation, and there's no
+  alertmanager.
+- Availability, backup, and key-rotation controls are outside this demo's
+  scope.
 
 ## Repository Layout
 
@@ -221,6 +268,8 @@ blueprint.
 backend/          Spring Boot resource server
 frontend/         Next.js TypeScript application
 infra/keycloak/   Local Keycloak realm import
+infra/prometheus/ Prometheus scrape config
+infra/grafana/    Grafana datasource/dashboard provisioning
 deploy/k8s/       Kubernetes manifests (deployment-readiness demo, see above)
 scripts/          Reviewer smoke test
 docs/             Architecture and AppSec documentation
