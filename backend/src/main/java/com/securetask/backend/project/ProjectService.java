@@ -1,10 +1,13 @@
 package com.securetask.backend.project;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import com.securetask.backend.audit.AuditEventProducer;
 import com.securetask.backend.audit.AuditRequestContext;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -18,6 +21,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Service
 class ProjectService {
 
+    private static final String PROJECT_LISTS_CACHE = "projectLists";
+
     private final ProjectRepository projectRepository;
     private final AuditEventProducer auditEventProducer;
 
@@ -29,6 +34,7 @@ class ProjectService {
     }
 
     @Transactional
+    @CacheEvict(value = PROJECT_LISTS_CACHE, allEntries = true)
     ProjectResponse create(
             ProjectRequest request,
             JwtAuthenticationToken authentication,
@@ -50,13 +56,14 @@ class ProjectService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = PROJECT_LISTS_CACHE, key = "#authentication.token.subject")
     List<ProjectResponse> findAll(JwtAuthenticationToken authentication) {
         List<Project> projects = isAdmin(authentication)
                 ? projectRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
                 : projectRepository.findAllByOwnerUserIdOrderByCreatedAtDesc(
                         authentication.getToken().getSubject());
 
-        return projects.stream().map(this::toResponse).toList();
+        return new ArrayList<>(projects.stream().map(this::toResponse).toList());
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +83,7 @@ class ProjectService {
     }
 
     @Transactional
+    @CacheEvict(value = PROJECT_LISTS_CACHE, allEntries = true)
     ProjectResponse update(
             UUID id,
             ProjectRequest request,
@@ -94,6 +102,7 @@ class ProjectService {
     }
 
     @Transactional
+    @CacheEvict(value = PROJECT_LISTS_CACHE, allEntries = true)
     void delete(
             UUID id,
             JwtAuthenticationToken authentication,
