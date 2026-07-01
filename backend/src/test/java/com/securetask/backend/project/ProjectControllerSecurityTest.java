@@ -44,4 +44,19 @@ class ProjectControllerSecurityTest {
                                 .authorities(new SimpleGrantedAuthority("ROLE_USER"))))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void ownerCanGetOwnProject() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        when(projectService.findById(eq(projectId), any(), any()))
+                .thenReturn(new ProjectResponse(
+                        projectId, "My project", null,
+                        "user-1", "user1@example.com", null, null));
+
+        mockMvc.perform(get("/api/v1/projects/{id}", projectId)
+                        .with(jwt()
+                                .jwt(token -> token.subject("user-1"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_USER"))))
+                .andExpect(status().isOk());
+    }
 }
