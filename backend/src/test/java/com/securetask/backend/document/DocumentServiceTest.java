@@ -16,6 +16,7 @@ import java.util.UUID;
 import com.securetask.backend.audit.AuditLogService;
 import com.securetask.backend.audit.AuditRequestContext;
 import com.securetask.backend.project.ProjectAuthorizationService;
+import org.springframework.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -124,6 +125,23 @@ class DocumentServiceTest {
                 authentication,
                 auditContext))
                 .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void pathTraversalFilenameIsRejected() {
+        UUID projectId = UUID.randomUUID();
+        JwtAuthenticationToken authentication = authentication("user-1", "ROLE_USER");
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "../../etc/passwd",
+                "text/plain",
+                "content".getBytes(StandardCharsets.UTF_8));
+        DocumentService service = service();
+
+        assertThatThrownBy(() -> service.upload(projectId, file, authentication, auditContext))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(e -> assertThat(((ResponseStatusException) e).getStatusCode())
+                        .isEqualTo(HttpStatus.BAD_REQUEST));
     }
 
     @Test

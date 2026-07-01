@@ -2,6 +2,7 @@ package com.securetask.backend.document;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -39,6 +40,20 @@ class DocumentControllerSecurityTest {
         mockMvc.perform(get(
                         "/api/v1/projects/{projectId}/documents",
                         UUID.randomUUID()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void unauthenticatedUploadGetsUnauthorized() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "notes.txt", "text/plain", "content".getBytes());
+        // Without a CSRF token, Spring's CsrfFilter returns 403 before auth runs; supply one so
+        // the auth check executes and returns 401 as expected.
+        mockMvc.perform(multipart(
+                        "/api/v1/projects/{projectId}/documents",
+                        UUID.randomUUID())
+                        .file(file)
+                        .with(csrf()))
                 .andExpect(status().isUnauthorized());
     }
 

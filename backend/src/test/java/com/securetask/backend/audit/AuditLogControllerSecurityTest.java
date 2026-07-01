@@ -28,6 +28,12 @@ class AuditLogControllerSecurityTest {
     private JwtDecoder jwtDecoder;
 
     @Test
+    void unauthenticatedRequestGetsUnauthorized() throws Exception {
+        mockMvc.perform(get("/api/v1/audit-logs"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void userCannotAccessAuditLogs() throws Exception {
         mockMvc.perform(get("/api/v1/audit-logs")
                         .with(jwt().authorities(
