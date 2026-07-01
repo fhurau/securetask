@@ -1,6 +1,6 @@
-# SecureTask MVP Project Plan
+# distributed-auth-platform MVP Project Plan
 
-SecureTask will be built incrementally so that each phase remains small,
+distributed-auth-platform will be built incrementally so that each phase remains small,
 reviewable, and testable.
 
 ## Phase 0: Repository Setup

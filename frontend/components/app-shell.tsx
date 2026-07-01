@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <ProtectedPage>
       <header className="site-header">
         <Link className="brand" href="/dashboard">
-          SecureTask
+          distributed-auth-platform
         </Link>
         <nav aria-label="Main navigation">
           <Link href="/dashboard">Dashboard</Link>

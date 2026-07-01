@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-SecureTask is a local portfolio app demonstrating security controls (OAuth2/OIDC via Keycloak,
+distributed-auth-platform is a local portfolio app demonstrating security controls (OAuth2/OIDC via Keycloak,
 object-level authorization, audit logging, controlled file upload/download, security headers) in a
 full-stack system: Next.js frontend, Spring Boot backend, PostgreSQL, Keycloak. It is explicitly a
 demo, not a production blueprint — see "Local-Demo Limitations" in README.md before "fixing" things

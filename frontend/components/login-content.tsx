@@ -21,7 +21,7 @@ export function LoginContent() {
   return (
     <main className="auth-layout">
       <section className="auth-card">
-        <h1>SecureTask</h1>
+        <h1>distributed-auth-platform</h1>
         <p className="muted">
           Sign in through Keycloak to manage projects and documents.
         </p>

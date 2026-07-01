@@ -1,3 +1,5 @@
+name: distributed-auth-platform
+
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION:-17-alpine}

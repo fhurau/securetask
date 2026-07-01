@@ -253,7 +253,7 @@ function Remove-NewUploadFiles {
 }
 
 try {
-    Write-Host "SecureTask reviewer smoke test" -ForegroundColor Cyan
+    Write-Host "distributed-auth-platform reviewer smoke test" -ForegroundColor Cyan
     Write-Host "Configuration: Keycloak=$KeycloakUrl Backend=$BackendApiUrl Realm=$Realm"
     Write-Host ""
 
@@ -367,7 +367,7 @@ try {
     $exePath = Join-Path ([IO.Path]::GetTempPath()) "securetask-smoke-$([Guid]::NewGuid()).exe"
     $downloadPath = Join-Path ([IO.Path]::GetTempPath()) "securetask-smoke-$([Guid]::NewGuid())-download.txt"
     $script:TemporaryFiles = @($txtPath, $exePath, $downloadPath)
-    $expectedText = "SecureTask smoke test $([Guid]::NewGuid())"
+    $expectedText = "distributed-auth-platform smoke test $([Guid]::NewGuid())"
     [IO.File]::WriteAllText($txtPath, $expectedText, [Text.Encoding]::UTF8)
     [IO.File]::WriteAllText($exePath, "not an executable", [Text.Encoding]::UTF8)
 

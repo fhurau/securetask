@@ -14,7 +14,7 @@ Status meanings:
 
 ## OWASP Top 10:2025
 
-| Category | Status | SecureTask evidence and limits |
+| Category | Status | distributed-auth-platform evidence and limits |
 | --- | --- | --- |
 | A01 Broken Access Control | Implemented | Backend role checks and project-owner checks protect Project CRUD and documents; tests cover key denial paths. New endpoints would still require careful review. |
 | A02 Security Misconfiguration | Partial | Environment-based configuration, restricted CI permissions, disabled Keycloak direct grants, narrow proxy header forwarding, and a basic security-header baseline help. Local HTTP, Keycloak dev mode, demo credentials, and non-production CSP allowances remain. |
@@ -29,7 +29,7 @@ Status meanings:
 
 ## OWASP API Security Top 10:2023
 
-| Category | Status | SecureTask evidence and limits |
+| Category | Status | distributed-auth-platform evidence and limits |
 | --- | --- | --- |
 | API1 Broken Object Level Authorization | Implemented | Project ownership is checked for object access; document lookup is scoped to project and document IDs; administrators are explicit exceptions. |
 | API2 Broken Authentication | Implemented | Spring validates Keycloak JWTs and all non-health API routes require authentication. Keycloak remains a local demo configuration. |
