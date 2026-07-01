@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: securetask
+data:
+  DATABASE_URL: "jdbc:postgresql://postgres:5432/keycloak?currentSchema=securetask"
+  DATABASE_USERNAME: securetask
+  DATABASE_PASSWORD: change-me-for-local-development
+  DOCUMENT_STORAGE_PATH: /app/data/uploads
+  # Illustrative only: in a real externally-reachable deployment this should
+  # be the public Keycloak URL (e.g. the Ingress host). Not exercised by the
+  # CI smoke test, which only checks /api/v1/health.
+  SECURITY_JWT_ISSUER_URI: http://localhost:8081/realms/securetask
+  SECURITY_JWT_JWK_SET_URI: http://keycloak:8080/realms/securetask/protocol/openid-connect/certs
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"

@@ -5,7 +5,11 @@ COPY pom.xml .
 RUN mvn dependency:go-offline
 
 COPY src src
-RUN mvn verify
+# Tests (including Testcontainers-based integration tests, which need a
+# Docker socket that isn't available inside a docker build sandbox) already
+# run in CI's separate test job before this image is ever built - skip them
+# here rather than fail the build on an environment they can't run in.
+RUN mvn -DskipTests package
 
 FROM eclipse-temurin:21-jre
 

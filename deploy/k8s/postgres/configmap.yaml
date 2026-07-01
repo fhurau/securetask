@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: securetask
+data:
+  POSTGRES_DB: keycloak
+  POSTGRES_USER: securetask
+  POSTGRES_PASSWORD: change-me-for-local-development
