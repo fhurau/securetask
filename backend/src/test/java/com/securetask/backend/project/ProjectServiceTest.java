@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.securetask.backend.audit.AuditLogService;
+import com.securetask.backend.audit.AuditEventProducer;
 import com.securetask.backend.audit.AuditRequestContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +32,7 @@ class ProjectServiceTest {
     private ProjectRepository projectRepository;
 
     @Mock
-    private AuditLogService auditLogService;
+    private AuditEventProducer auditEventProducer;
 
     private final AuditRequestContext auditContext =
             new AuditRequestContext("127.0.0.1", "test-agent", "test-correlation-id");
@@ -44,7 +44,7 @@ class ProjectServiceTest {
             project.onCreate();
             return project;
         });
-        ProjectService service = new ProjectService(projectRepository, auditLogService);
+        ProjectService service = new ProjectService(projectRepository, auditEventProducer);
         JwtAuthenticationToken authentication =
                 authentication("user-1", "user1@example.com", "ROLE_USER");
 
@@ -58,7 +58,7 @@ class ProjectServiceTest {
         assertThat(captor.getValue().getOwnerUserId()).isEqualTo("user-1");
         assertThat(captor.getValue().getOwnerEmail()).isEqualTo("user1@example.com");
         assertThat(response.name()).isEqualTo("My project");
-        verify(auditLogService).record(
+        verify(auditEventProducer).publish(
                 authentication,
                 "PROJECT_CREATED",
                 response.id(),
@@ -71,7 +71,7 @@ class ProjectServiceTest {
         Project ownProject = project("Own project", "user-1", "user1@example.com");
         when(projectRepository.findAllByOwnerUserIdOrderByCreatedAtDesc("user-1"))
                 .thenReturn(List.of(ownProject));
-        ProjectService service = new ProjectService(projectRepository, auditLogService);
+        ProjectService service = new ProjectService(projectRepository, auditEventProducer);
 
         List<ProjectResponse> response = service.findAll(
                 authentication("user-1", "user1@example.com", "ROLE_USER"));
@@ -88,7 +88,7 @@ class ProjectServiceTest {
                 "user2@example.com");
         when(projectRepository.findById(otherProject.getId()))
                 .thenReturn(Optional.of(otherProject));
-        ProjectService service = new ProjectService(projectRepository, auditLogService);
+        ProjectService service = new ProjectService(projectRepository, auditEventProducer);
         JwtAuthenticationToken authentication =
                 authentication("user-1", "user1@example.com", "ROLE_USER");
 
@@ -97,7 +97,7 @@ class ProjectServiceTest {
                 authentication,
                 auditContext))
                 .isInstanceOf(AccessDeniedException.class);
-        verify(auditLogService).record(
+        verify(auditEventProducer).publish(
                 authentication,
                 "ACCESS_DENIED",
                 otherProject.getId(),
@@ -110,7 +110,7 @@ class ProjectServiceTest {
         Project first = project("First", "user-1", "user1@example.com");
         Project second = project("Second", "user-2", "user2@example.com");
         when(projectRepository.findAll(any(Sort.class))).thenReturn(List.of(first, second));
-        ProjectService service = new ProjectService(projectRepository, auditLogService);
+        ProjectService service = new ProjectService(projectRepository, auditEventProducer);
 
         List<ProjectResponse> response = service.findAll(
                 authentication("admin-1", "admin@example.com", "ROLE_ADMIN"));

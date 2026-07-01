@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.securetask.backend.audit.AuditLogService;
+import com.securetask.backend.audit.AuditEventProducer;
 import com.securetask.backend.audit.AuditRequestContext;
 import com.securetask.backend.project.ProjectAuthorizationService;
 import org.springframework.http.HttpStatus;
@@ -43,7 +43,7 @@ class DocumentServiceTest {
     private ProjectAuthorizationService projectAuthorizationService;
 
     @Mock
-    private AuditLogService auditLogService;
+    private AuditEventProducer auditEventProducer;
 
     private final AuditRequestContext auditContext =
             new AuditRequestContext("127.0.0.1", "test-agent", "test-correlation");
@@ -74,7 +74,7 @@ class DocumentServiceTest {
         verify(storageService).store(storedFilename.capture(), any());
         assertThat(storedFilename.getValue()).endsWith(".txt").doesNotContain("notes");
         assertThat(response.originalFilename()).isEqualTo("notes.txt");
-        verify(auditLogService).record(
+        verify(auditEventProducer).publish(
                 authentication,
                 "DOCUMENT_UPLOADED",
                 "DOCUMENT",
@@ -101,7 +101,7 @@ class DocumentServiceTest {
                 auditContext);
 
         assertThat(download.originalFilename()).isEqualTo("report.pdf");
-        verify(auditLogService).record(
+        verify(auditEventProducer).publish(
                 authentication,
                 "DOCUMENT_DOWNLOADED",
                 "DOCUMENT",
@@ -166,7 +166,7 @@ class DocumentServiceTest {
                 documentRepository,
                 storageService,
                 projectAuthorizationService,
-                auditLogService,
+                auditEventProducer,
                 100);
 
         assertThatThrownBy(() -> service.upload(
@@ -175,7 +175,7 @@ class DocumentServiceTest {
                 authentication,
                 auditContext))
                 .isInstanceOf(ResponseStatusException.class);
-        verify(auditLogService).record(
+        verify(auditEventProducer).publish(
                 authentication,
                 "DOCUMENT_UPLOAD_REJECTED",
                 "PROJECT",
@@ -189,7 +189,7 @@ class DocumentServiceTest {
                 documentRepository,
                 storageService,
                 projectAuthorizationService,
-                auditLogService,
+                auditEventProducer,
                 5 * 1024 * 1024);
     }
 

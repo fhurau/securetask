@@ -1,10 +1,7 @@
 package com.securetask.backend.audit;
 
 import java.util.List;
-import java.util.UUID;
 
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,34 +16,17 @@ public class AuditLogService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void record(
-            JwtAuthenticationToken authentication,
-            String action,
-            UUID resourceId,
-            String result,
-            AuditRequestContext context) {
-        record(authentication, action, "PROJECT", resourceId, result, context);
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void record(
-            JwtAuthenticationToken authentication,
-            String action,
-            String resourceType,
-            UUID resourceId,
-            String result,
-            AuditRequestContext context) {
-        Jwt jwt = authentication.getToken();
+    public void record(AuditEvent event) {
         AuditLog auditLog = new AuditLog(
-                jwt.getSubject(),
-                jwt.getClaimAsString("email"),
-                action,
-                resourceType,
-                resourceId,
-                result,
-                context.ipAddress(),
-                context.userAgent(),
-                context.correlationId());
+                event.actorUserId(),
+                event.actorEmail(),
+                event.action(),
+                event.resourceType(),
+                event.resourceId(),
+                event.result(),
+                event.ipAddress(),
+                event.userAgent(),
+                event.correlationId());
         auditLogRepository.save(auditLog);
     }
 
