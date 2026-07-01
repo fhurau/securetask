@@ -25,10 +25,18 @@ spec:
           readinessProbe:
             tcpSocket:
               port: 9092
-            initialDelaySeconds: 15
+            initialDelaySeconds: 20
             periodSeconds: 10
+          # KRaft's first-boot storage format takes noticeably longer than
+          # the other services' startup here; a liveness probe that fires
+          # too early kills the container mid-bootstrap and causes a
+          # restart loop that never gets past first boot (observed in CI:
+          # exit code 143 from a 30s-initial-delay / 3-failure liveness
+          # probe). Generous delay + threshold so it only intervenes on an
+          # actually-hung process, not a slow-but-healthy startup.
           livenessProbe:
             tcpSocket:
               port: 9092
-            initialDelaySeconds: 30
-            periodSeconds: 15
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            failureThreshold: 5

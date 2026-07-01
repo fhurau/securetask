@@ -152,11 +152,16 @@ jobs:
       - name: Apply Kubernetes manifests
         run: kubectl apply -R -f deploy/k8s/
 
-      - name: Wait for datastore and broker pods
+      - name: Wait for datastore pods
         run: |
           kubectl -n securetask rollout status deployment/postgres --timeout=180s
           kubectl -n securetask rollout status deployment/redis --timeout=180s
-          kubectl -n securetask rollout status deployment/kafka --timeout=180s
+
+      - name: Wait for Kafka
+        # KRaft's first-boot storage format is noticeably slower than the
+        # other services here - see the comment on the liveness probe in
+        # deploy/k8s/kafka/deployment.yaml.
+        run: kubectl -n securetask rollout status deployment/kafka --timeout=300s
 
       - name: Wait for Keycloak
         run: kubectl -n securetask rollout status deployment/keycloak --timeout=240s
