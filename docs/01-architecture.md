@@ -2,7 +2,7 @@
 
 ## Purpose
 
-SecureTask is a local portfolio application that demonstrates authenticated
+distributed-auth-platform is a local portfolio application that demonstrates authenticated
 project management, object-level authorization, controlled document handling,
 and security audit logging. It is not a production reference architecture.
 
