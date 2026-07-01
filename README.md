@@ -46,6 +46,73 @@ Keycloak imports the `securetask` realm only when it does not already exist.
 If an older local realm is present, remove the local Docker volumes and start
 again only when deleting local demo data is acceptable.
 
+## Kubernetes (Demonstration)
+
+**This section is optional and is not required to try the project.**
+docker-compose above is the only supported way to run SecureTask locally.
+The manifests under [`deploy/k8s/`](deploy/k8s/) exist to demonstrate
+deployment readiness - that the same containers can run under a real
+orchestrator, with health probes, startup ordering, and service discovery -
+not as a second way to develop against.
+
+The GitHub Actions `deploy` job in the
+[security workflow](.github/workflows/security-ci.yml) proves this
+automatically on every push/PR: it builds the backend and frontend images,
+spins up a disposable [kind](https://kind.sigs.k8s.io/) (Kubernetes-in-Docker)
+cluster on the runner, loads the images into it (no registry, no cloud
+account, no credentials of any kind), applies every manifest in
+`deploy/k8s/`, waits for all pods to become ready, and smoke-tests the
+backend health endpoint and the frontend through `kubectl port-forward`. The
+cluster and images are discarded when the job finishes.
+
+Known, intentional simplifications versus the compose setup (all a
+consequence of this being a demo, not a production manifest set):
+
+- No `Secret` objects - every value is the same intentionally-committed demo
+  credential already in `.env.example`, kept in `ConfigMap`s for simplicity.
+  A real deployment should use `Secret`s or an external secret manager.
+- No `PersistentVolumeClaim`s - Postgres and Redis data do not survive a pod
+  restart. Fine for a cluster that's recreated per CI run or per local demo
+  session; not fine for anything meant to keep data.
+- The frontend's `NEXT_PUBLIC_*` values are baked into the image at
+  `docker build` time (a Next.js constraint, not a Kubernetes one) - changing
+  `deploy/k8s/frontend/configmap.yaml` alone has no effect; the image must be
+  rebuilt with matching `--build-arg` values.
+- `deploy/k8s/ingress.yaml` requires an ingress controller (e.g.
+  `ingress-nginx`) that kind does not install by default. CI's smoke test
+  uses `kubectl port-forward` instead, which proves the same
+  Service-to-Pod routing with far less setup; the Ingress manifest is
+  provided for anyone who installs a controller locally.
+
+To run it yourself locally with [kind](https://kind.sigs.k8s.io/) and
+[kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl):
+
+```powershell
+kind create cluster --name securetask
+docker build -t securetask-backend:local ./backend
+docker build `
+  --build-arg NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8081 `
+  --build-arg NEXT_PUBLIC_KEYCLOAK_REALM=securetask `
+  --build-arg NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=securetask-frontend `
+  --build-arg NEXT_PUBLIC_API_PROXY_PATH=/api/backend `
+  -t securetask-frontend:local ./frontend
+kind load docker-image securetask-backend:local --name securetask
+kind load docker-image securetask-frontend:local --name securetask
+kubectl apply -f deploy/k8s/namespace.yaml
+kubectl create configmap keycloak-realm-import -n securetask `
+  --from-file=infra/keycloak/realms/securetask-realm.json `
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -R -f deploy/k8s/
+kubectl -n securetask rollout status deployment/backend
+kubectl -n securetask port-forward svc/frontend 3000:3000
+```
+
+If the manifest's `image:` fields (`securetask-backend:ci` /
+`securetask-frontend:ci`) don't match the tags above, edit
+`deploy/k8s/backend/deployment.yaml` and
+`deploy/k8s/frontend/deployment.yaml` to `:local`, or tag your local builds
+`:ci` instead.
+
 ## Demo Credentials
 
 These accounts and passwords are intentionally committed for the local demo.
@@ -117,13 +184,17 @@ Detailed design and limitations:
 
 The [security workflow](.github/workflows/security-ci.yml) runs on pushes to
 `main`, pull requests, and manual dispatch. It uses free tooling and performs
-no deployment:
+no deployment to real infrastructure - only a disposable, local-to-the-runner
+`kind` cluster:
 
 - Maven backend tests on Java 21
 - Frontend locked install, lint, and production build on Node.js
 - Gitleaks secret scanning
 - Trivy high/critical dependency scanning
 - Actionlint workflow validation
+- Kubernetes deployment demo: builds both images, applies
+  [`deploy/k8s/`](deploy/k8s/) to a `kind` cluster, and smoke-tests it (see
+  [Kubernetes (Demonstration)](#kubernetes-demonstration) above)
 
 ## Local-Demo Limitations
 
@@ -150,6 +221,7 @@ blueprint.
 backend/          Spring Boot resource server
 frontend/         Next.js TypeScript application
 infra/keycloak/   Local Keycloak realm import
+deploy/k8s/       Kubernetes manifests (deployment-readiness demo, see above)
 scripts/          Reviewer smoke test
 docs/             Architecture and AppSec documentation
 .github/workflows Security CI

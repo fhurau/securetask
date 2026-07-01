@@ -46,7 +46,12 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:${KAFKA_PORT:-9092}
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      # localhost, not the "kafka" service name: this single node is its own
+      # sole controller-quorum member, so the self-connection shouldn't
+      # depend on service DNS resolving at all (see deploy/k8s/kafka/configmap.yaml
+      # for the k8s-side crash this caused when that name resolution raced
+      # against a not-yet-ready DNS server).
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
