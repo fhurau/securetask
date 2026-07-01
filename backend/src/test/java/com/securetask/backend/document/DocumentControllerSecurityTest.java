@@ -12,9 +12,11 @@ import java.util.UUID;
 
 import com.securetask.backend.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -34,6 +36,9 @@ class DocumentControllerSecurityTest {
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
+
+    @MockitoBean(answers = Answers.RETURNS_DEEP_STUBS)
+    private StringRedisTemplate redisTemplate;
 
     @Test
     void unauthenticatedRequestGetsUnauthorized() throws Exception {

@@ -4,17 +4,27 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import com.securetask.backend.auth.BlacklistTokenValidator;
+import com.securetask.backend.auth.TokenBlacklistService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
@@ -24,7 +34,9 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            RateLimitFilter rateLimitFilter) throws Exception {
         return http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
@@ -56,7 +68,29 @@ public class SecurityConfig {
                                                 + "form-action 'self'")))
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
                         jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                .addFilterAfter(rateLimitFilter, BearerTokenAuthenticationFilter.class)
                 .build();
+    }
+
+    @Bean
+    JwtDecoder jwtDecoder(
+            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuerUri,
+            @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") String jwkSetUri,
+            TokenBlacklistService tokenBlacklistService) {
+        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        OAuth2TokenValidator<Jwt> validator = new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefaultWithIssuer(issuerUri),
+                new BlacklistTokenValidator(tokenBlacklistService));
+        jwtDecoder.setJwtValidator(validator);
+        return jwtDecoder;
+    }
+
+    @Bean
+    RateLimitFilter rateLimitFilter(
+            StringRedisTemplate redisTemplate,
+            @Value("${securetask.rate-limit.requests-per-window}") int requestsPerWindow,
+            @Value("${securetask.rate-limit.window-seconds}") long windowSeconds) {
+        return new RateLimitFilter(redisTemplate, requestsPerWindow, windowSeconds);
     }
 
     @Bean

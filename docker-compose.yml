@@ -57,6 +57,19 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:${REDIS_VERSION:-7-alpine}
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: ./backend
@@ -69,6 +82,8 @@ services:
       SECURITY_JWT_ISSUER_URI: http://localhost:${KEYCLOAK_PORT:-8081}/realms/securetask
       SECURITY_JWT_JWK_SET_URI: http://keycloak:8080/realms/securetask/protocol/openid-connect/certs
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
@@ -79,6 +94,8 @@ services:
       keycloak:
         condition: service_started
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   frontend:
@@ -106,3 +123,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
