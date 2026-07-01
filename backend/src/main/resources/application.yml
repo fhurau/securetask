@@ -39,6 +39,14 @@ spring:
         spring.json.trusted.packages: com.securetask.backend.audit
         spring.json.value.default.type: com.securetask.backend.audit.AuditEvent
         spring.json.use.type.headers: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
+    redis:
+      time-to-live: 10m
 
 management:
   endpoints:
@@ -56,3 +64,6 @@ securetask:
   documents:
     storage-path: ${DOCUMENT_STORAGE_PATH:./data/uploads}
     max-size-bytes: 5242880
+  rate-limit:
+    requests-per-window: 60
+    window-seconds: 60
