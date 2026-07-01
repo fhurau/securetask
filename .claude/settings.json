@@ -8,6 +8,16 @@
             "type": "command",
             "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Projects\\securetask\\.claude\\hooks\\format-frontend.ps1\"",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Projects\\securetask\\.claude\\hooks\\lint-backend.ps1\"",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"C:\\Projects\\securetask\\.claude\\hooks\\test-backend.ps1\"",
+            "timeout": 120
           }
         ]
       }
